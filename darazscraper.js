@@ -1,6 +1,6 @@
 const puppeteer = require('puppeteer');
 const cheerio = require('cheerio');
-
+const fs = require('fs');
 const BASE_URL = "https://www.daraz.com.np";
 const NAV_TIMEOUT = 60000;
 
@@ -106,7 +106,6 @@ async function scrapeCategory(page, category) {
 
 async function main() {
 
-    console.log('okay cha ta');
     let catIndex = 1;
     const browser = await puppeteer.launch({ headless: true })
     const page = await browser.newPage();
@@ -119,7 +118,11 @@ async function main() {
 
         for (const singleCat of categories) {
             const products = await scrapeCategory(page, singleCat);
-            console.log(products, products.length, 'products');
+            fs.writeFileSync(
+                `${singleCat.name.replace(/\s+/g, '_')}.json`,   // file name per category
+                JSON.stringify(products, null, 2),               // pretty JSON
+                'utf-8'
+            );
             catIndex++;
 
             if (catIndex > 2) {
