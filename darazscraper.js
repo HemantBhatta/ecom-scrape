@@ -99,16 +99,16 @@ async function scrapeCategory(page, category) {
     while (true) {
         console.log('running for time', pageIndex);
         const batch = await extractProductsOnPage(page);
-        await sleep(jitter(3000, 2000));
+        await sleep(jitter(6000, 2000));
         products.push(...batch);
         const progressed = await clickNextIfExists(page);
-        await sleep(jitter(3000, 1000));
+        await sleep(jitter(5000, 1000));
         console.log(progressed, 'next page raicha ta');
         if (!progressed) break;
         pageIndex++;
-        if (pageIndex > 5) {
-            console.warn(`Stopped at 2 pages for category: ${category.name}`);
-            break;
+
+        if (pageIndex % 10 === 0) {
+            await sleep(jitter(50000, 30000));
         }
     }
 
@@ -126,13 +126,14 @@ async function main() {
     try {
         await page.goto(BASE_URL, { waitUntil: 'networkidle2', timeout: NAV_TIMEOUT });
         const categories = await extractCategories(page);
-        await sleep(jitter(2000, 2000));
+        await sleep(jitter(3000, 2000));
         console.log(`Found ${categories.length} categories`);
 
         for (const singleCat of categories) {
+            console.log('Started to scrape ' + singleCat.name + ' category.');
+            await sleep(jitter(8000, 2000));
             const products = await scrapeCategory(page, singleCat);
-            console.log(singleCat.name + 'contains' + products.length + 'products');
-            await sleep(jitter(4000, 2000));
+            console.log(singleCat.name + ' contains ' + products.length + ' products.');
             fs.writeFileSync(
                 `${singleCat.name.replace(/\s+/g, '_')}.json`,   // file name per category
                 JSON.stringify(products, null, 2),               // pretty JSON
@@ -140,7 +141,7 @@ async function main() {
             );
             catIndex++;
 
-            if (catIndex > 2) {
+            if (catIndex > 5) {
                 break;
             }
         }
