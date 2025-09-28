@@ -8,6 +8,16 @@ const CATEGORY_LINK_SELECTOR_GUESSES = [
     '#js_categories .card-categories-ul .card-categories-li'
 ];
 
+function sleep(ms) {
+    return new Promise(r => setTimeout(r, ms));
+}
+
+
+function jitter(ms, spreadMs = 500) {
+    return ms + Math.floor(Math.random() * spreadMs);
+}
+
+
 async function extractCategories(page) {
 
     await page.waitForSelector("#js_categories", { timeout: 15000 });
@@ -18,6 +28,7 @@ async function extractCategories(page) {
 
     const cats = [];
     for (const link of linkNodes) {
+        await sleep(jitter(100, 300));
         const parent = link;
 
         const name = await parent.evaluate(node => node.innerText);
@@ -31,7 +42,6 @@ async function extractCategories(page) {
         }
 
     }
-
     return cats;
 }
 
@@ -89,12 +99,14 @@ async function scrapeCategory(page, category) {
     while (true) {
         console.log('running for time', pageIndex);
         const batch = await extractProductsOnPage(page);
+        await sleep(jitter(3000, 2000));
         products.push(...batch);
         const progressed = await clickNextIfExists(page);
+        await sleep(jitter(3000, 1000));
         console.log(progressed, 'next page raicha ta');
         if (!progressed) break;
         pageIndex++;
-        if (pageIndex > 2) {
+        if (pageIndex > 5) {
             console.warn(`Stopped at 2 pages for category: ${category.name}`);
             break;
         }
@@ -114,10 +126,13 @@ async function main() {
     try {
         await page.goto(BASE_URL, { waitUntil: 'networkidle2', timeout: NAV_TIMEOUT });
         const categories = await extractCategories(page);
+        await sleep(jitter(2000, 2000));
         console.log(`Found ${categories.length} categories`);
 
         for (const singleCat of categories) {
             const products = await scrapeCategory(page, singleCat);
+            console.log(singleCat.name + 'contains' + products.length + 'products');
+            await sleep(jitter(4000, 2000));
             fs.writeFileSync(
                 `${singleCat.name.replace(/\s+/g, '_')}.json`,   // file name per category
                 JSON.stringify(products, null, 2),               // pretty JSON
