@@ -88,6 +88,18 @@ async function scrapeCategory(page, category) {
     const products = [];
 
     await page.goto(category.url, { waitUntil: 'networkidle2', timeout: NAV_TIMEOUT });
+    const catPathname = new URL(category.url).pathname;
+    const lastPartOfCat = catPathname.split('/').filter(Boolean).pop();
+    console.log(lastPartOfCat);
+    await page.screenshot({ path: lastPartOfCat + '.png', fullPage: true, type: 'png' })
+
+    await page.emulateMediaType('screen');
+    await page.pdf({
+        path: lastPartOfCat + '.pdf',
+        format: 'A4',
+        printBackground: true,
+        margin: { top: '20mm', bottom: '20mm', left: '15mm', right: '15mm' },
+    });
 
     let pageIndex = 1;
     while (true) {
@@ -106,7 +118,7 @@ async function scrapeCategory(page, category) {
             await sleep(jitter(50000, 30000));
         }
 
-        if (pageIndex > 5) {
+        if (pageIndex > 1) {
             break;
         }
     }
@@ -143,7 +155,7 @@ async function main() {
     let catIndex = 1;
     const browser = await puppeteer.launch({ headless: true })
     const page = await browser.newPage();
-    await page.setViewport({ width: 1280, height: 900 });
+    await page.setViewport({ width: 1360, height: 900 });
     await page.setUserAgent('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36');
     try {
         await page.goto(BASE_URL, { waitUntil: 'networkidle2', timeout: NAV_TIMEOUT });
@@ -158,18 +170,18 @@ async function main() {
             const products = await scrapeCategory(page, singleCat);
             console.log(singleCat.name + ' contains ' + products.length + ' products.');
             let productIndex = 1
-            for (const singleProductURL of products) {
-                const productDetails = await getProductDetails(page, singleProductURL);
-                categoriesProduct.push(productDetails)
-                productIndex++
-                console.log('getting product details for product' + productIndex)
-            }
+            // for (const singleProductURL of products) {
+            //     const productDetails = await getProductDetails(page, singleProductURL);
+            //     categoriesProduct.push(productDetails)
+            //     productIndex++
+            //     console.log('getting product details for product' + productIndex)
+            // }
 
-            fs.writeFileSync(
-                `${singleCat.name.replace(/\s+/g, '_')}.json`,   // file name per category
-                JSON.stringify(categoriesProduct, null, 2),               // pretty JSON
-                'utf-8'
-            );
+            // fs.writeFileSync(
+            //     `${singleCat.name.replace(/\s+/g, '_')}.json`,   // file name per category
+            //     JSON.stringify(categoriesProduct, null, 2),               // pretty JSON
+            //     'utf-8'
+            // );
             catIndex++;
         }
 
