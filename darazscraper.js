@@ -52,16 +52,10 @@ async function extractProductsOnPage(page) {
             console.log('step 1')
             return cards.map(card => {
                 console.log('step 2')
-                const title = card.querySelector('.buTCk .RfADt a')
-                const price = card.querySelector('.buTCk .aBrP0 span')
-                if (title) {
-                    title_text = title ? title.innerText : '';
-                }
-
-                if (price) {
-                    total_price = price ? price.innerText : '';
-                }
-                return { title: title_text, price: total_price };
+                const productURLNode = card.querySelector('a')
+                const productURL = productURLNode.getAttribute('href');
+                console.log(productURL, 'product_url')
+                return { 'product_url': productURL };
             });
         });
         return items;
@@ -99,6 +93,7 @@ async function scrapeCategory(page, category) {
     while (true) {
         console.log('running for time', pageIndex);
         const batch = await extractProductsOnPage(page);
+
         await sleep(jitter(6000, 2000));
         products.push(...batch);
         const progressed = await clickNextIfExists(page);
@@ -110,9 +105,36 @@ async function scrapeCategory(page, category) {
         if (pageIndex % 10 === 0) {
             await sleep(jitter(50000, 30000));
         }
-    }
 
+        if (pageIndex > 5) {
+            break;
+        }
+    }
+    // console.log(products, 'products')
     return products;
+}
+
+
+async function getProductDetails(page, singleProductUrl) {
+    const singleProductURL = new URL(singleProductUrl.product_url, BASE_URL).href;
+    await page.goto(singleProductURL, { waitUntil: 'networkidle2', timeout: NAV_TIMEOUT });
+    const parentCont = await page.waitForSelector(".pdp-block__product-detail", { timeout: 15000 });
+    await parentCont.waitForSelector(".pdp-price_type_normal", { timeout: 30000, visible: true }).catch(() => { });;
+    await parentCont.waitForSelector(".pdp-price_type_deleted", { timeout: 30000, visible: true }).catch(() => { });;
+    const singleProductDetails = await parentCont.evaluate((parentElem) => {
+        const productTitleElem = parentElem.querySelector('.pdp-mod-product-badge-title')
+        const productDiscountPriceElem = parentElem.querySelector('.pdp-price_type_normal')
+        const productOriginalPriceElem = parentElem.querySelector('.pdp-price_type_deleted')
+        const productDiscountPercentElem = parentElem.querySelector('.pdp-product-price__discount')
+        const productTitle = productTitleElem?.innerText || null;
+        const productDiscountPrice = productDiscountPriceElem?.innerText || null;
+        const productOriginalPrice = productOriginalPriceElem?.innerText || null;
+        const productDiscountPercent = productDiscountPercentElem?.innerText || null;
+
+        return { productTitle, productDiscountPrice, productOriginalPrice, productDiscountPercent };
+    }, '.pdp-block__product-detail')
+
+    return singleProductDetails;
 }
 
 
@@ -130,20 +152,25 @@ async function main() {
         console.log(`Found ${categories.length} categories`);
 
         for (const singleCat of categories) {
+            const categoriesProduct = [];
             console.log('Started to scrape ' + singleCat.name + ' category.');
             await sleep(jitter(8000, 2000));
             const products = await scrapeCategory(page, singleCat);
             console.log(singleCat.name + ' contains ' + products.length + ' products.');
+            let productIndex = 1
+            for (const singleProductURL of products) {
+                const productDetails = await getProductDetails(page, singleProductURL);
+                categoriesProduct.push(productDetails)
+                productIndex++
+                console.log('getting product details for product' + productIndex)
+            }
+
             fs.writeFileSync(
                 `${singleCat.name.replace(/\s+/g, '_')}.json`,   // file name per category
-                JSON.stringify(products, null, 2),               // pretty JSON
+                JSON.stringify(categoriesProduct, null, 2),               // pretty JSON
                 'utf-8'
             );
             catIndex++;
-
-            if (catIndex > 5) {
-                break;
-            }
         }
 
     } catch (err) {

@@ -1,14 +1,26 @@
 [
   {
-    "title": "Baby Seater",
-    "price": "Rs. 1,567"
+    "productTitle": "Baby Seater",
+    "productDiscountPrice": "Rs. 1,567",
+    "productOriginalPrice": "Rs. 1,999",
+    "productDiscountPercent": "-22%"
   },
   {
-    "title": "Portable Detachable Baby Car Safety Seat Cushion For Babies With Adjustable Safety Belt",
-    "price": "Rs. 2,821"
+    "productTitle": "Portable Detachable Baby Car Safety Seat Cushion For Babies With Adjustable Safety Belt",
+    "productDiscountPrice": "Rs. 2,821",
+    "productOriginalPrice": "Rs. 2,999",
+    "productDiscountPercent": "-6%"
   },
   {
-    "title": "Mamubox Tummy Time Sofa for Baby",
-    "price": "Rs. 1,371"
+    "productTitle": "Mamubox Tummy Time Sofa for Baby",
+    "productDiscountPrice": "Rs. 1,371",
+    "productOriginalPrice": "Rs. 3,119",
+    "productDiscountPercent": "-56%"
+  },
+  {
+    "productTitle": "Baby Seater",
+    "productDiscountPrice": "Rs. 1,426",
+    "productOriginalPrice": "Rs. 1,999",
+    "productDiscountPercent": "-29%"
   }
 ]
